@@ -1,0 +1,6 @@
+streamlit
+rich
+psutil
+flask
+matplotlib
+numpy

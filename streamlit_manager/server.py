@@ -13,7 +13,7 @@ import socket
 from flask import Flask, request, jsonify
 
 application = Flask(__name__)
-application.logger.setLevel(logging.INFO)
+application.logger.setLevel(logging.CRITICAL)
 
 DATABASE = {} # instance_id: {"port": , "filename": , "timestamp": , "pid":}
 
@@ -48,7 +48,7 @@ def launch_streamlit(code, port):
         '--global.unitTest=0',
         '--global.suppressDeprecationWarnings=1',
         '--global.dataFrameSerialization=arrow',
-        '--logger.level=debug',
+        '--logger.level=info',
         '--logger.enableRich=1',
         '--client.displayEnabled=1',
         '--client.showErrorDetails=1',
@@ -76,8 +76,12 @@ def launch_streamlit(code, port):
         filename,
     ]
 
-    proc = subprocess.Popen(command)
-
+    proc = subprocess.Popen(
+        command,
+        stdin=None,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     return proc.pid, filename
 
 def kill(parent_pid):
@@ -123,8 +127,6 @@ def get_streamlit_server_direct(instance_id, code, env=None):
         application.logger.info(f"instance_id {instance_id} already exists; updating code")
         port = DATABASE[instance_id]["port"]
         # Update file with latest code, if changed:
-        application.logger.info(f"{DATABASE[instance_id]['filename']}")
-        application.logger.info(f"{code}")
         with open(DATABASE[instance_id]["filename"], "w") as fp:
             fp.write(code)
         return DATABASE[instance_id]
@@ -154,6 +156,9 @@ def get_streamlit_server_direct(instance_id, code, env=None):
 def start_manager_server(host, port):
     proc = subprocess.Popen(
         [sys.executable, "-m", "streamlit_manager.server", "--host", host, "--port", str(port)],
+        stdin=None,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
 
 def main(host="localhost", port=5000):
@@ -163,10 +168,9 @@ def main(host="localhost", port=5000):
         application.logger.info("Streamlit Manager Server already running on port %s" % port)
     else:
         application.logger.info("Starting Streamlit Manager Server on port %s..." % port)
-        application.debug = False
         # Else assume already running
 
-        application.run(port=port)
+        application.run(debug=False, port=port, use_reloader=False, use_debugger=False)
 
         application.logger.info("Shutting down Streamlit Manager Server...")
         # Cleanup running streamlit servers and files:

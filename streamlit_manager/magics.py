@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from streamlit_manager.server import start_manager_server, get_streamlit_server_direct
+    
 try:
     from IPython.display import IFrame
     from IPython.core.magic import register_cell_magic
@@ -9,18 +11,18 @@ try:
 
     @magic_arguments()
     @argument('-n', '--name', help='A unique name for the Streamlit Server', default="default")
-    @argument('-h', '--host', help='Host for the Streamlit Server', default="localhost")
+    @argument('-h', '--host', help='Host for the Streamlit Manager', default="localhost")
+    @argument('-p', '--port', help='Port for the Streamlit Manager', default=5000)
+    @argument('--width', help='Width, percent or pixels, for the iframe', default="100%")
+    @argument('--height', help='Height, in pixels, for the iframe', default="300px")
     @register_cell_magic
     def streamlit(line, cell):
-        from streamlit_manager.server import start_manager_server
 
-        args = parse_argstring(my_cell_magic, line)
-
+        args = parse_argstring(streamlit, line)
         start_manager_server(args.host, args.port)
-
         results = get_streamlit_server_direct(args.name, cell)
         return IFrame(src="http://%s:%s" % (args.host, results["port"]),
-                      width="100%", height="700px")
+                      width=args.width, height=args.height)
 
-except ImportError:
+except Exception:
     pass

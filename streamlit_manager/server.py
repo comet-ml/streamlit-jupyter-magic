@@ -6,6 +6,7 @@ import psutil
 import tempfile
 import os
 import time
+import sys
 from threading import Thread
 import socket
 
@@ -15,13 +16,12 @@ application = Flask(__name__)
 application.logger.setLevel(logging.INFO)
 
 DATABASE = {} # instance_id: {"port": , "filename": , "timestamp": , "pid":}
-HOST = None
 
 def is_port_in_use(host, port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex((host, port)) == 0
 
-def launch_streamlit(code, host, port):
+def launch_streamlit(code, port):
 
     # I tried some lame security here, and also
     # RestrictedPython and restricted-functions, but
@@ -38,7 +38,10 @@ def launch_streamlit(code, host, port):
     # To add security, run as a specific user with no permissions
     # See "streamlit run --help" for more flags dealing with URLs, CORS, etc.
     command = [
+        sys.executable,
+        "-m",
         'streamlit',
+        '--',
         'run',
         '--global.disableWatchdogWarning=0',
         '--global.developmentMode=0',
@@ -59,7 +62,7 @@ def launch_streamlit(code, host, port):
         '--server.fileWatcherType=auto',
         '--server.headless=1',
         '--server.runOnSave=0',
-        '--server.allowRunOnSave=0',
+        '--server.allowRunOnSave=1',
         '--server.port=%s' % port,
         '--server.scriptHealthCheckEnabled=1',
         '--server.maxMessageSize=10',
@@ -73,15 +76,7 @@ def launch_streamlit(code, host, port):
         filename,
     ]
 
-    proc = subprocess.Popen(
-        [" ".join(command)],
-        shell=True,
-        stdin=None,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        close_fds=True,
-        env=os.environ
-    )
+    proc = subprocess.Popen(command)
 
     return proc.pid, filename
 
@@ -128,6 +123,8 @@ def get_streamlit_server_direct(instance_id, code, env=None):
         application.logger.info(f"instance_id {instance_id} already exists; updating code")
         port = DATABASE[instance_id]["port"]
         # Update file with latest code, if changed:
+        application.logger.info(f"{DATABASE[instance_id]['filename']}")
+        application.logger.info(f"{code}")
         with open(DATABASE[instance_id]["filename"], "w") as fp:
             fp.write(code)
         return DATABASE[instance_id]
@@ -137,7 +134,7 @@ def get_streamlit_server_direct(instance_id, code, env=None):
     port = 4000
     while port in get_ports(DATABASE):
         port += 1
-        while port in is_port_in_use(port):
+        while is_port_in_use("localhost", port):
             port += 1
 
     DATABASE[instance_id] = {"port": port}
@@ -145,9 +142,8 @@ def get_streamlit_server_direct(instance_id, code, env=None):
     if env:
         os.environ.update(env)
     
-    pid, filename = launch_streamlit(code, HOST, port)
+    pid, filename = launch_streamlit(code, port)
 
-    DATABASE[instance_id]["host"] = HOST
     DATABASE[instance_id]["pid"] = pid
     DATABASE[instance_id]["filename"] = filename
     DATABASE[instance_id]["timestamp"] = time.time()
@@ -157,19 +153,11 @@ def get_streamlit_server_direct(instance_id, code, env=None):
 
 def start_manager_server(host, port):
     proc = subprocess.Popen(
-        ["python -m streamlit_manager.server  --host %s --port %s" % (host, port)],
-        shell=True,
-        stdin=None,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        close_fds=True,
-        env=os.environ
+        [sys.executable, "-m", "streamlit_manager.server", "--host", host, "--port", str(port)],
     )
 
 def main(host="localhost", port=5000):
-    global HOST
     url = "http://%s:%s" % (host, port)
-    HOST = host
 
     if is_port_in_use(host, port):
         application.logger.info("Streamlit Manager Server already running on port %s" % port)

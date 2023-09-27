@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 
-import .magics
+import streamlit_manager.magics

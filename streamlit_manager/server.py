@@ -115,10 +115,8 @@ def get_streamlit_server_direct(instance_id, code, env=None):
     # Else, find an open port, and start a streamlit server:
 
     port = 4000
-    while port in get_ports(DATABASE):
+    while is_port_in_use("localhost", port):
         port += 1
-        while is_port_in_use("localhost", port):
-            port += 1
 
     DATABASE[instance_id] = {"port": port}
 

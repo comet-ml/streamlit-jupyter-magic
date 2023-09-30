@@ -1,21 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import subprocess
-import psutil
 import tempfile
 import os
 import time
 import sys
 from threading import Thread
-import socket
 
+from .utils import is_port_in_use
 
 DEBUG = False
-DATABASE = {} # instance_id: {"port": , "filename": , "timestamp": , "pid":}
-
-def is_port_in_use(host, port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex((host, port)) == 0
+DATABASE = {} # instance_id: {"port": , "filename": , "timestamp":}
 
 def launch_streamlit(code, port):
 
@@ -25,10 +20,15 @@ def launch_streamlit(code, port):
     # environments
     preamble = ""
 
-    with tempfile.NamedTemporaryFile('w+', suffix=".py", delete=False) as fp:
+    filename = "streamlit-code-%s.py" % port
+    with open(filename, "w") as fp:
         fp.write(preamble + code)
+    
+    #with tempfile.NamedTemporaryFile('w+', suffix=".py", delete=False) as fp:
+    #    fp.write(preamble + code)
+    #fp.close()
 
-    filename = fp.name
+    #filename = fp.name
 
     # To use a specific version of python, use: "/usr/bin/python3.8 -m streamlit"
     # To add security, run as a specific user with no permissions
@@ -39,64 +39,29 @@ def launch_streamlit(code, port):
         'streamlit',
         '--',
         'run',
-        '--global.disableWatchdogWarning=0',
-        '--global.developmentMode=0',
-        '--global.unitTest=0',
-        '--global.suppressDeprecationWarnings=1',
         '--global.dataFrameSerialization=arrow',
-        '--logger.level=info',
+        '--logger.level=debug',
         '--logger.enableRich=1',
-        '--client.displayEnabled=1',
         '--client.showErrorDetails=1',
         '--client.toolbarMode=minimal',
-        '--runner.magicEnabled=0',
-        '--runner.installTracer=0',
         '--runner.fixMatplotlib=1',
-        '--runner.postScriptGC=0',
-        '--runner.fastReruns=0',
-        '--runner.enforceSerializableSessionState=1',
         '--server.fileWatcherType=auto',
         '--server.headless=1',
-        '--server.runOnSave=1',
-        '--server.allowRunOnSave=1',
         '--server.port=%s' % port,
         '--server.scriptHealthCheckEnabled=1',
-        '--server.maxMessageSize=10',
-        '--server.enableWebsocketCompression=1',
-        '--server.enableStaticServing=0',
-        '--browser.gatherUsageStats=0',
         '--ui.hideTopBar=1',
         '--ui.hideSidebarNav=1',
-        '--deprecation.showPyplotGlobalUse=0',
         '--theme.base=light',
         filename,
     ]
 
-    if DEBUG:
-        proc = subprocess.Popen(command)
-    else:
-        proc = subprocess.Popen(
-            command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        
-    return proc.pid, filename
+    # Run in background
+    os.system(" ".join(command) + " &")
 
-def kill(parent_pid):
-    parent = psutil.Process(parent_pid)
-    procs = parent.children(recursive=True)
-    for child in procs:
-        child.terminate()
-    gone, alive = psutil.wait_procs(procs, timeout=3)
-    for child in alive:
-        child.kill()
+    return filename
 
 def get_ports(db):
     return [value["port"] for value in db.values()]
-
-def get_pids(db):
-    return [value["pid"] for value in db.values()]
 
 def get_filenames(db):
     return [value["filename"] for value in db.values()]
@@ -123,9 +88,8 @@ def get_streamlit_server_direct(instance_id, code, env=None):
     if env:
         os.environ.update(env)
     
-    pid, filename = launch_streamlit(code, port)
+    filename = launch_streamlit(code, port)
 
-    DATABASE[instance_id]["pid"] = pid
     DATABASE[instance_id]["filename"] = filename
     DATABASE[instance_id]["timestamp"] = time.time()
     time.sleep(2)

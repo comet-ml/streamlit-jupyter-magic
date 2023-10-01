@@ -2,11 +2,12 @@
 
 import os
 import logging
+import signal
 
 from flask import Flask, request, jsonify
 
-from .server import get_streamlit_server_direct, get_filenames, get_ports, DEBUG, DATABASE
-from .util import is_port_in_use, kill
+from .server import get_streamlit_server_direct, get_filenames, get_ports, DEBUG
+from .util import is_port_in_use
 
 
 application = Flask(__name__)
@@ -41,10 +42,10 @@ def main(host="localhost", port=5000):
 
         application.logger.info("Shutting down Streamlit Manager Server...")
         # Cleanup running streamlit servers and files:
-        for port in get_ports(DATABASE):
-            pid, status = get_pid(port)
-            kill(pid)
-        for filename in get_filenames(DATABASE):
+        for port in get_ports():
+            pid = get_pid(port)
+            os.kill(pid, signal.SIGKILL)
+        for filename in get_filenames():
             os.remove(filename)
 
 if __name__ == "__main__":

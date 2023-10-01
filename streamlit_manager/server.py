@@ -5,30 +5,26 @@ import tempfile
 import os
 import time
 import sys
-from threading import Thread
+import signal
 
 from .utils import is_port_in_use
 
 DEBUG = False
 DATABASE = {} # instance_id: {"port": , "filename": , "timestamp":}
 
-def launch_streamlit(code, port):
-
+def launch_streamlit(code, port, filename=None):
     # I tried some lame security here, and also
     # RestrictedPython and restricted-functions, but
     # they don't play nicely with streamlits monkey-patched
     # environments
     preamble = ""
 
-    filename = "streamlit-code-%s.py" % port
-    with open(filename, "w") as fp:
-        fp.write(preamble + code)
-    
-    #with tempfile.NamedTemporaryFile('w+', suffix=".py", delete=False) as fp:
-    #    fp.write(preamble + code)
-    #fp.close()
-
-    #filename = fp.name
+    if filename is None:
+        temp_dir = tempfile.mkdtemp()
+        with tempfile.NamedTemporaryFile('w+', suffix=".py", delete=False, dir=temp_dir) as fp:
+            fp.write(preamble + code)
+        fp.close()
+        filename = fp.name
 
     # To use a specific version of python, use: "/usr/bin/python3.8 -m streamlit"
     # To add security, run as a specific user with no permissions
@@ -37,34 +33,41 @@ def launch_streamlit(code, port):
         sys.executable,
         "-m",
         'streamlit',
-        '--',
         'run',
-        '--global.dataFrameSerialization=arrow',
-        '--logger.level=debug',
-        '--logger.enableRich=1',
-        '--client.showErrorDetails=1',
-        '--client.toolbarMode=minimal',
-        '--runner.fixMatplotlib=1',
-        '--server.fileWatcherType=auto',
+        '--server.fileWatcherType=none',
+        '--logger.level=debug' if DEBUG else '--logger.level=error',
         '--server.headless=1',
         '--server.port=%s' % port,
-        '--server.scriptHealthCheckEnabled=1',
         '--ui.hideTopBar=1',
         '--ui.hideSidebarNav=1',
-        '--theme.base=light',
+        '--client.toolbarMode=minimal',
         filename,
     ]
 
     # Run in background
-    os.system(" ".join(command) + " &")
+    if DEBUG:
+        proc = subprocess.Popen(command)
+    else:
+        proc = subprocess.Popen(
+            command,
+            stdin=None,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
-    return filename
+    return proc.pid, filename
 
-def get_ports(db):
-    return [value["port"] for value in db.values()]
+def get_pid(port):
+    return [value["pid"] for value in DATABASE.values() if value["port"] == port][0]
 
-def get_filenames(db):
-    return [value["filename"] for value in db.values()]
+def get_pids():
+    return [value["pid"] for value in DATABASE.values()]
+
+def get_ports():
+    return [value["port"] for value in DATABASE.values()]
+
+def get_filenames():
+    return [value["filename"] for value in DATABASE.values()]
 
 def get_streamlit_server_direct(instance_id, code, env=None):
     # First we see if this instance_id already has
@@ -72,12 +75,17 @@ def get_streamlit_server_direct(instance_id, code, env=None):
 
     if instance_id in DATABASE:
         port = DATABASE[instance_id]["port"]
-        # Update file with latest code, if changed:
+        if is_port_in_use("localhost", port):
+            pid = get_pid(port)
+            os.kill(pid, signal.SIGKILL)
         with open(DATABASE[instance_id]["filename"], "w") as fp:
             fp.write(code)
+        pid, filename = launch_streamlit(code, port, DATABASE[instance_id]["filename"])
+        DATABASE[instance_id]["pid"] = pid
+        time.sleep(2)
         return DATABASE[instance_id]
 
-    # Else, find an open port, and start a streamlit server:
+    # Else, find empty port and start:
 
     port = 4000
     while is_port_in_use("localhost", port):
@@ -88,9 +96,10 @@ def get_streamlit_server_direct(instance_id, code, env=None):
     if env:
         os.environ.update(env)
     
-    filename = launch_streamlit(code, port)
+    pid, filename = launch_streamlit(code, port)
 
     DATABASE[instance_id]["filename"] = filename
+    DATABASE[instance_id]["pid"] = pid
     DATABASE[instance_id]["timestamp"] = time.time()
     time.sleep(2)
     return DATABASE[instance_id]

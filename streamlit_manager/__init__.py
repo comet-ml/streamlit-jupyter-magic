@@ -10,7 +10,7 @@ try:
     )
 
     @magic_arguments()
-    @argument('-n', '--name', help='A unique name for the Streamlit Server', default="default")
+    @argument('-n', '--name', help='A unique name for the Streamlit Server', default="comet-default")
     @argument('-h', '--host', help='Host for the Streamlit Manager', default="localhost")
     @argument('-p', '--port', help='Port for the Streamlit Manager', default=5000)
     @argument('--width', help='Width, percent or pixels, for the iframe', default="100%")

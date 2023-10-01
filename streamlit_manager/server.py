@@ -103,17 +103,3 @@ def get_streamlit_server_direct(instance_id, code, env=None):
     DATABASE[instance_id]["timestamp"] = time.time()
     time.sleep(2)
     return DATABASE[instance_id]
-
-
-def start_manager_server(host, port):
-    command = [sys.executable, "-m", "streamlit_manager", "--host", host, "--port", str(port)]
-    if DEBUG:
-        proc = subprocess.Popen(command)
-    else:
-        proc = subprocess.Popen(
-            command,
-            stdin=None,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-

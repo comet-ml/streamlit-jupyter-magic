@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .server import DEBUG, get_streamlit_server_direct, start_manager_server
+from .server import DEBUG, get_streamlit_server_direct
 from .utils import in_colab_environment
 
 try:
@@ -36,7 +36,6 @@ try:
     @register_cell_magic
     def streamlit(line, cell):
         args = parse_argstring(streamlit, line)
-        start_manager_server(args.host, args.port)
         results = get_streamlit_server_direct(args.name, cell)
 
         if in_colab_environment():

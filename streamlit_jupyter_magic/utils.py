@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+############################################
+# Copyright (c) 2023                       #
+# Streamlit Jupyter Magic Development Team #
+# All rights reserved                      #
+############################################
 
 import socket
-
 import psutil
-
 
 def is_port_in_use(host, port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

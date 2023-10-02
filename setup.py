@@ -28,7 +28,7 @@ with io.open(os.path.join(HERE, "README.md"), encoding="utf8") as fh:
     long_description = fh.read()
 
 setup_args = dict(
-    name="streamlit-manager",
+    name="streamlit-jupyter-magic",
     version=__version__,
     url="https://github.com/comet-ml/streamlit-manager",
     author="Streamlit Manager Development Team",
@@ -39,19 +39,17 @@ setup_args = dict(
         "streamlit",
         "rich",
         "psutil",
-        "flask",
         "matplotlib",
         "numpy",
     ],
     packages=[
-        "streamlit_manager",
+        "streamlit_jupyter_magic",
     ],
     include_package_data=True,
-    #entry_points={"console_scripts": ["kangas = kangas.cli:main"]},
     python_requires=">=3.7",
     license="Apache 2.0 License",
     platforms="Linux, Mac OS X, Windows",
-    keywords=["data science", "python", "machine learning"],
+    keywords=["data science", "python"],
     classifiers=[
         "License :: OSI Approved :: Apache 2.0 License",
         "Programming Language :: Python",

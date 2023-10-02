@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+############################################
+# Copyright (c) 2023                       #
+# Streamlit Jupyter Magic Development Team #
+# All rights reserved                      #
+############################################
 
-from .server import DEBUG, get_streamlit_server_direct
+from .server import DEBUG, get_streamlit_server
 from .utils import in_colab_environment
 
 try:
@@ -36,7 +41,7 @@ try:
     @register_cell_magic
     def streamlit(line, cell):
         args = parse_argstring(streamlit, line)
-        results = get_streamlit_server_direct(args.name, cell)
+        results = get_streamlit_server(args.name, cell)
 
         if in_colab_environment():
             clear_output(wait=True)

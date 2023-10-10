@@ -5,21 +5,22 @@
 # All rights reserved                      #
 ############################################
 
-import subprocess
-import tempfile
 import os
-import time
+import subprocess
 import sys
-import signal
+import tempfile
+import time
 
 from .utils import is_port_in_use
 
 DEBUG = False
-DATABASE = {} # instance_id: {"page": , "timestamp": }
+DATABASE = {}  # instance_id: {"page": , "timestamp": }
 DIRECTORY = None
+
 
 def get_pages():
     return [value["page"] for value in DATABASE.values()]
+
 
 def launch_streamlit(port):
     """
@@ -36,15 +37,15 @@ def launch_streamlit(port):
     command = [
         sys.executable,
         "-m",
-        'streamlit',
-        'run',
-        '--logger.level=debug' if DEBUG else '--logger.level=error',
-        '--server.runOnSave=1',
-        '--server.headless=1',
-        '--server.port=%s' % port,
-        '--ui.hideTopBar=1',
-        '--ui.hideSidebarNav=1',
-        '--client.toolbarMode=minimal',
+        "streamlit",
+        "run",
+        "--logger.level=debug" if DEBUG else "--logger.level=error",
+        "--server.runOnSave=1",
+        "--server.headless=1",
+        "--server.port=%s" % port,
+        "--ui.hideTopBar=1",
+        "--ui.hideSidebarNav=1",
+        "--client.toolbarMode=minimal",
         page_0,
     ]
 
@@ -60,10 +61,11 @@ def launch_streamlit(port):
 
     return proc.pid, directory
 
+
 def get_streamlit_page(host, port, instance_id, code):
     """
     Get the details of a streamlit page for a particular
-    instance_id (name). 
+    instance_id (name).
     """
     global DIRECTORY
     if not is_port_in_use(host, port):
@@ -89,6 +91,12 @@ def get_streamlit_page(host, port, instance_id, code):
             "timestamp": time.time(),
         }
 
+    # First we touch page_0
+    page_0 = os.path.join(DIRECTORY, "page_0.py")
+    with open(page_0, "a") as fp:
+        fp.write(" ")
+
+    # Next, we update the page:
     subdir = os.path.join(DIRECTORY, "pages")
     if not os.path.isdir(subdir):
         os.makedirs(subdir, exist_ok=False)

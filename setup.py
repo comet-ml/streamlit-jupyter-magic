@@ -53,11 +53,9 @@ setup_args = dict(
     platforms="Linux, Mac OS X, Windows",
     keywords=["data science", "python"],
     classifiers=[
-        "License :: OSI Approved :: Apache 2.0 License",
+        "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Framework :: Jupyter",

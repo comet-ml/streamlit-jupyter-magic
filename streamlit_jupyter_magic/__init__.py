@@ -15,7 +15,7 @@ try:
     from IPython.core.magic import register_cell_magic
     from IPython.core.magic_arguments import argument  # noqa: E501
     from IPython.core.magic_arguments import magic_arguments, parse_argstring
-    from IPython.display import IFrame, Javascript, clear_output
+    from IPython.display import IFrame
 
     def pre_run_cell(info):
         global CELL_ID
@@ -48,33 +48,37 @@ try:
     @argument(
         "--height", help="Height, in pixels, for the iframe", default="300px"
     )  # noqa: E501
+    @argument(
+        "--use-colab-workaround",
+        help="Use when colab won't open iframe",
+        default=False,
+        action="store_true",
+    )
     @register_cell_magic
     def streamlit(line, cell):
         args = parse_argstring(streamlit, line)
 
         if args.name is None:
-            args.name = CELL_ID if CELL_ID else "comet-default"
+            args.name = CELL_ID if CELL_ID else "streamlit-default"
 
         results = get_streamlit_page(args.host, args.port, args.name, cell)
 
         if in_colab_environment():
-            clear_output(wait=True)
-            return Javascript(
-                """
-(async ()=>{{
-    fm = document.createElement('iframe');
-    fm.src = (await google.colab.kernel.proxyPort({port}));
-    fm.width = '{width}';
-    fm.height = '{height}';
-    fm.frameBorder = 0;
-    document.body.append(fm);
-}})();
-""".format(
-                    port=args.port,
+            from google.colab import output
+
+            if args.use_colab_workaround:
+                output.serve_kernel_port_as_window(
+                    args.port,
+                    path="/page_%d" % results["page"],
+                    anchor_text="Open streamlit app in window",
+                )
+            else:
+                output.serve_kernel_port_as_iframe(
+                    args.port,
+                    path="/page_%d" % results["page"],
                     width=args.width,
                     height=args.height,
                 )
-            )
         else:
             return IFrame(
                 src="http://%s:%s/page_%d"

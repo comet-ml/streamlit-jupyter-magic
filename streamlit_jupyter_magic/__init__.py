@@ -5,7 +5,7 @@
 # All rights reserved                      #
 ############################################
 
-from .server import DEBUG, get_streamlit_server
+from .server import DEBUG, get_streamlit_page
 from .utils import in_colab_environment
 
 try:
@@ -24,11 +24,11 @@ try:
     @argument(
         "-h",
         "--host",
-        help="Host for the Streamlit Manager",
+        help="Host for the Streamlit Server",
         default="localhost",  # noqa: E501
     )
     @argument(
-        "-p", "--port", help="Port for the Streamlit Manager", default=5000
+        "-p", "--port", help="Port for the Streamlit Server", default=5000
     )  # noqa: E501
     @argument(
         "--width",
@@ -41,7 +41,7 @@ try:
     @register_cell_magic
     def streamlit(line, cell):
         args = parse_argstring(streamlit, line)
-        results = get_streamlit_server(args.name, cell)
+        results = get_streamlit_page(args.host, args.port, args.name, cell)
 
         if in_colab_environment():
             clear_output(wait=True)
@@ -56,14 +56,14 @@ try:
     document.body.append(fm);
 }})();
 """.format(
-                    port=results["port"],
+                    port=args.port,
                     width=args.width,
                     height=args.height,
                 )
             )
         else:
             return IFrame(
-                src="http://%s:%s" % (args.host, results["port"]),
+                src="http://%s:%s/page_%d" % (args.host, args.port, results["page"]),
                 width=args.width,
                 height=args.height,
             )

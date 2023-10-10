@@ -22,7 +22,9 @@ def get_version(file, name="__version__"):
     return version_ns[name]
 
 
-__version__ = get_version(os.path.join(HERE, "streamlit_jupyter_magic/_version.py"))
+__version__ = get_version(
+    os.path.join(HERE, "streamlit_jupyter_magic/_version.py")
+)  # noqa: E501
 
 with io.open(os.path.join(HERE, "README.md"), encoding="utf8") as fh:
     long_description = fh.read()
@@ -32,7 +34,7 @@ setup_args = dict(
     version=__version__,
     url="https://github.com/comet-ml/streamlit-jupyter-magic",
     author="Streamlit Jupyter Magic Development Team",
-    description="Manager for Jupyter streamlit servers",
+    description="Streamlit for Jupyter environments",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[

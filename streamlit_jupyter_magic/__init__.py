@@ -8,18 +8,28 @@
 from .server import DEBUG, get_streamlit_page
 from .utils import in_colab_environment
 
+CELL_ID = None
+
 try:
+    from IPython import get_ipython
     from IPython.core.magic import register_cell_magic
     from IPython.core.magic_arguments import argument  # noqa: E501
     from IPython.core.magic_arguments import magic_arguments, parse_argstring
     from IPython.display import IFrame, Javascript, clear_output
 
+    def pre_run_cell(info):
+        global CELL_ID
+        CELL_ID = info.cell_id
+
+    get_ipython().events.register("pre_run_cell", pre_run_cell)
+
     @magic_arguments()
     @argument(
         "-n",
         "--name",
-        help="A unique name for the Streamlit Server",
-        default="comet-default",
+        help="A unique name for the Streamlit page",
+        type=str,
+        default=None,
     )
     @argument(
         "-h",
@@ -41,6 +51,10 @@ try:
     @register_cell_magic
     def streamlit(line, cell):
         args = parse_argstring(streamlit, line)
+
+        if args.name is None:
+            args.name = CELL_ID if CELL_ID else "comet-default"
+
         results = get_streamlit_page(args.host, args.port, args.name, cell)
 
         if in_colab_environment():
@@ -63,7 +77,12 @@ try:
             )
         else:
             return IFrame(
-                src="http://%s:%s/page_%d" % (args.host, args.port, results["page"]),
+                src="http://%s:%s/page_%d"
+                % (
+                    args.host,
+                    args.port,
+                    results["page"],
+                ),
                 width=args.width,
                 height=args.height,
             )

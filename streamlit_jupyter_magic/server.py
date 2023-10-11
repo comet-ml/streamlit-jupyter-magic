@@ -101,18 +101,18 @@ def get_streamlit_page(host, port, instance_id, code):
         launch_streamlit(port, page_0)
         # Wait for app to get started:
         time.sleep(2)
+    else:
+        # Needed for some reason sometimes (streamlit bug?)
+        def update():
+            # Wait for after app displayed:
+            time.sleep(2)
+            # Force a chage:
+            with open(os.path.join(filename), "a") as fp:
+                fp.write(" ")
 
-    # Needed for some reason sometimes (streamlit bug?)
-    def update():
-        # Wait for after app displayed:
-        time.sleep(2)
-        # Force a chage:
-        with open(os.path.join(filename), "a") as fp:
-            fp.write(" ")
-
-    t = threading.Thread(target=update)
-    # So it doesn't go out of scope and get garbage collected:
-    DATABASE[instance_id]["thread"] = t
-    t.start()
+        t = threading.Thread(target=update)
+        # So it doesn't go out of scope and get garbage collected:
+        DATABASE[instance_id]["thread"] = t
+        t.start()
 
     return DATABASE[instance_id]

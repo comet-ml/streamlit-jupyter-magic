@@ -27,6 +27,8 @@ if st.button("Click me!"):
 
 Results in the following:
 
+![Jupyter Magic Demo](https://github.com/comet-ml/streamlit-jupyter-magic/blob/main/images/demo.gif?raw=true)
+
 ## Limitations
 
 1. Currently doesn't work on colab, due to a couple of colab bugs

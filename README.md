@@ -32,4 +32,4 @@ Results in the following:
 ## Limitations
 
 1. Currently doesn't work on colab, due to a couple of colab bugs
-2. Currently doesn't work with multiple notebooks open simultaneously
+2. Currently doesn't work in multiple notebooks that are open simultaneously

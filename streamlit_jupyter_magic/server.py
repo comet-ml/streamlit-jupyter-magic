@@ -9,9 +9,8 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
-
-from .utils import is_port_in_use
 
 DEBUG = False
 DATABASE = {}  # instance_id: {"page": , "timestamp": }
@@ -22,17 +21,11 @@ def get_pages():
     return [value["page"] for value in DATABASE.values()]
 
 
-def launch_streamlit(port):
+def launch_streamlit(port, page_0):
     """
     Start a streamlit singleton server watching a tempdir/page_0.py and
     tempdir/pages/.
     """
-    directory = tempfile.mkdtemp()
-    page_0 = os.path.join(directory, "page_0.py")
-    # Make an empty top-level script:
-    with open(page_0, "w") as fp:
-        fp.write("")
-
     # See "streamlit run --help" for more flags dealing with URLs, CORS, etc.
     command = [
         sys.executable,
@@ -59,7 +52,7 @@ def launch_streamlit(port):
             stderr=subprocess.DEVNULL,
         )
 
-    return proc.pid, directory
+    return proc.pid
 
 
 def get_streamlit_page(host, port, instance_id, code):
@@ -68,11 +61,12 @@ def get_streamlit_page(host, port, instance_id, code):
     instance_id (name).
     """
     global DIRECTORY
-    if not is_port_in_use(host, port):
-        pid, DIRECTORY = launch_streamlit(port)
-        time.sleep(2)
-    elif DIRECTORY is None:
-        raise Exception("Port %s is unavailable; " % port)
+
+    start = False
+
+    if DIRECTORY is None:
+        DIRECTORY = tempfile.mkdtemp()
+        start = True
 
     # First we see if this instance_id already has
     # a page associated with it:
@@ -91,17 +85,34 @@ def get_streamlit_page(host, port, instance_id, code):
             "timestamp": time.time(),
         }
 
-    # First we touch page_0
-    page_0 = os.path.join(DIRECTORY, "page_0.py")
-    with open(page_0, "a") as fp:
-        fp.write(" ")
-
-    # Next, we update the page:
+    # Update the page:
     subdir = os.path.join(DIRECTORY, "pages")
-    if not os.path.isdir(subdir):
-        os.makedirs(subdir, exist_ok=False)
+    os.makedirs(subdir, exist_ok=True)
     filename = os.path.join(subdir, "%d_page_%d.py" % (page, page))
     with open(filename, "w") as fp:
         fp.write(code)
+
+    if start:
+        page_0 = os.path.join(DIRECTORY, "page_0.py")
+        # Make an empty top-level script:
+        with open(page_0, "w") as fp:
+            fp.write("")
+
+        launch_streamlit(port, page_0)
+        # Wait for app to get started:
+        time.sleep(2)
+
+    # Needed for some reason sometimes (streamlit bug?)
+    def update():
+        # Wait for after app displayed:
+        time.sleep(2)
+        # Force a chage:
+        with open(os.path.join(filename), "a") as fp:
+            fp.write(" ")
+
+    t = threading.Thread(target=update)
+    # So it doesn't go out of scope and get garbage collected:
+    DATABASE[instance_id]["thread"] = t
+    t.start()
 
     return DATABASE[instance_id]

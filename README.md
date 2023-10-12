@@ -43,7 +43,7 @@ Use any of these flags with `%%streamlit FLAGS...`
 * `--name NAME` - set the name (a unique instance id) for this cell app; default uses Jupyter cell ID
 * `--width VALUE` - set the app width, such as "100%" 
 * `--height VALUE` - set the app height, such as "700px" 
-* `--use-colab-workaround` - use a window rather than iframe, but still doesn't work
+* `--use-colab-workaround` - on colab, use a window rather than iframe, but still doesn't work (colab bug)
 
 ## Under the hood
 

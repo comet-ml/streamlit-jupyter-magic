@@ -32,7 +32,7 @@ Results in the following:
 ## Limitations
 
 1. Currently doesn't work on colab, due to a couple of colab bugs
-2. Currently doesn't work in multiple notebooks that are open simultaneously without setting `--port` flag (see below)
+2. To use in multiple notebooks that are open simultaneously,  use the `--port` flag (see below)
 
 ## Flags
 

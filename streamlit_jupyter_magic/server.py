@@ -21,7 +21,7 @@ def get_pages():
     return [value["page"] for value in DATABASE.values()]
 
 
-def launch_streamlit(port, page_0):
+def launch_streamlit(port, page_0, path=None):
     """
     Start a streamlit singleton server watching a tempdir/page_0.py and
     tempdir/pages/.
@@ -30,7 +30,7 @@ def launch_streamlit(port, page_0):
     command = [
         sys.executable,
         "-m",
-        "streamlit",
+        "streamlit" if path is None else os.path.join(path, "streamlit"),
         "run",
         "--logger.level=debug" if DEBUG else "--logger.level=error",
         "--server.runOnSave=1",
@@ -55,7 +55,7 @@ def launch_streamlit(port, page_0):
     return proc.pid
 
 
-def get_streamlit_page(host, port, instance_id, code):
+def get_streamlit_page(host, port, instance_id, code, path=None):
     """
     Get the details of a streamlit page for a particular
     instance_id (name).
@@ -98,7 +98,7 @@ def get_streamlit_page(host, port, instance_id, code):
         with open(page_0, "w") as fp:
             fp.write("")
 
-        launch_streamlit(port, page_0)
+        launch_streamlit(port, page_0, path)
         # Wait for app to get started:
         time.sleep(2)
     else:

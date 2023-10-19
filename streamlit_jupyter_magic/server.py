@@ -39,6 +39,7 @@ def launch_streamlit(port, page_0):
         "--ui.hideTopBar=1",
         "--ui.hideSidebarNav=1",
         "--client.toolbarMode=minimal",
+        "--browser.gatherUsageStats=0",
         page_0,
     ]
 

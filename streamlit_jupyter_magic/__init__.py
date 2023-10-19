@@ -19,7 +19,8 @@ try:
 
     def pre_run_cell(info):
         global CELL_ID
-        CELL_ID = info.cell_id
+        if hasattr(info, "cell_id"):
+            CELL_ID = info.cell_id
 
     get_ipython().events.register("pre_run_cell", pre_run_cell)
 

@@ -49,6 +49,6 @@ Use any of these flags with `%%streamlit FLAGS...`
 
 `streamlit-jupyter-magic` uses streamlit pages to keep memory usage down.
 
-The magic code can be found in: [streamlit_jupyter_magic/__init__.py](https://github.com/comet-ml/streamlit-jupyter-magic/blob/main/streamlit_jupyter_magic/__init__.py)
+The magic code can be found in: [streamlit_jupyter_magic/\_\_init__.py](https://github.com/comet-ml/streamlit-jupyter-magic/blob/main/streamlit_jupyter_magic/__init__.py)
 
 The rest of the code is utility code for managing the streamlit server.

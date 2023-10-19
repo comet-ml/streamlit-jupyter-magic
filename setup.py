@@ -38,7 +38,7 @@ setup_args = dict(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[
-        "streamlit",
+        "streamlit<=1.27.1",
         "rich",
         "psutil",
         "matplotlib",

@@ -5,10 +5,10 @@
 # All rights reserved                      #
 ############################################
 
+import random
+
 from .server import DEBUG, get_streamlit_page
 from .utils import in_colab_environment
-
-CELL_ID = None
 
 try:
     from IPython import get_ipython
@@ -16,13 +16,6 @@ try:
     from IPython.core.magic_arguments import argument  # noqa: E501
     from IPython.core.magic_arguments import magic_arguments, parse_argstring
     from IPython.display import IFrame
-
-    def pre_run_cell(info):
-        global CELL_ID
-        if hasattr(info, "cell_id"):
-            CELL_ID = info.cell_id
-
-    get_ipython().events.register("pre_run_cell", pre_run_cell)
 
     @magic_arguments()
     @argument(
@@ -60,7 +53,7 @@ try:
         args = parse_argstring(streamlit, line)
 
         if args.name is None:
-            args.name = CELL_ID if CELL_ID else "streamlit-default"
+            args.name = str(random.randint(1, 1_000_000))
 
         results = get_streamlit_page(args.host, args.port, args.name, cell)
 
@@ -70,19 +63,19 @@ try:
             if args.use_colab_workaround:
                 output.serve_kernel_port_as_window(
                     args.port,
-                    path="/page_%d" % results["page"],
+                    path="/" + results["page"],
                     anchor_text="Open streamlit app in window",
                 )
             else:
                 output.serve_kernel_port_as_iframe(
                     args.port,
-                    path="/page_%d" % results["page"],
+                    path="/" + results["page"],
                     width=args.width,
                     height=args.height,
                 )
         else:
             return IFrame(
-                src="http://%s:%s/page_%d"
+                src="http://%s:%s/%s"
                 % (
                     args.host,
                     args.port,
